@@ -1,0 +1,19 @@
+{{template "base" .}}
+
+{{define "content"}}
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <h1> This is about page </h1>
+                <p>This is data from map {{index .StringData "test"}}</p>
+                <p>
+                    {{if ne (index .StringData "user_ip") ""}}
+                        This is your ip {{index .StringData "user_ip"}}
+                    {{else}}
+                        I dont know you matherfucker, firs go <a href="/"> HERE </a>
+                    {{end}}
+                </p>
+            </div>
+        </div>
+    </div>
+{{end}}
