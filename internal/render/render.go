@@ -7,8 +7,9 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/eighthGnom/booking/pkg/config"
-	"github.com/eighthGnom/booking/pkg/models"
+	"github.com/eighthGnom/booking/internal/config"
+	"github.com/eighthGnom/booking/internal/models"
+	"github.com/justinas/nosurf"
 )
 
 var appConfig *config.AppConfig
@@ -20,12 +21,13 @@ func SetTemplatesConfig(config *config.AppConfig) {
 }
 
 // AddDefaultData adds to the templates default data
-func AddDefaultData(td *models.TemplateData) *models.TemplateData {
+func AddDefaultData(td *models.TemplateData, r *http.Request) *models.TemplateData {
+	td.CSRFToken = nosurf.Token(r)
 	return td
 }
 
 // RenderTemplate render templates and writes them to response
-func RenderTemplate(w http.ResponseWriter, tmpl string, td *models.TemplateData) {
+func RenderTemplate(w http.ResponseWriter, r *http.Request, tmpl string, td *models.TemplateData) {
 	tc := map[string]*template.Template{}
 	if appConfig.UseCache {
 		tc = appConfig.TemplateCache
@@ -37,7 +39,7 @@ func RenderTemplate(w http.ResponseWriter, tmpl string, td *models.TemplateData)
 		log.Fatal("Could not get template from template cache")
 	}
 
-	td = AddDefaultData(td)
+	td = AddDefaultData(td, r)
 
 	err := t.Execute(w, td)
 	if err != nil {

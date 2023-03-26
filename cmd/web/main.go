@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/alexedwards/scs/v2"
-	"github.com/eighthGnom/booking/pkg/config"
-	"github.com/eighthGnom/booking/pkg/handlers"
-	"github.com/eighthGnom/booking/pkg/render"
+	"github.com/eighthGnom/booking/internal/config"
+	"github.com/eighthGnom/booking/internal/handlers"
+	"github.com/eighthGnom/booking/internal/render"
 )
 
 var port = ":8080"
