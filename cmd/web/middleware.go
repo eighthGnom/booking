@@ -19,7 +19,7 @@ func NoSurf(next http.Handler) http.Handler {
 	return newHandler
 }
 
-// SaveSession loads and saves the session on every request
-func SaveSession(next http.Handler) http.Handler {
+// SessionLoad loads and saves the session on every request
+func SessionLoad(next http.Handler) http.Handler {
 	return sessionManager.LoadAndSave(next)
 }
