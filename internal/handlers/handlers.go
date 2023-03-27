@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/eighthGnom/booking/internal/config"
+	"github.com/eighthGnom/booking/internal/forms"
 	"github.com/eighthGnom/booking/internal/models"
 	"github.com/eighthGnom/booking/internal/render"
 )
@@ -55,7 +56,14 @@ func (m *Repository) About(w http.ResponseWriter, r *http.Request) {
 
 // Reservation renders the make a reservation page and displays form
 func (m *Repository) Reservation(w http.ResponseWriter, r *http.Request) {
-	render.RenderTemplate(w, r, "make-reservation.page.tmpl", &models.TemplateData{})
+	render.RenderTemplate(w, r, "make-reservation.page.tmpl", &models.TemplateData{
+		FormValues: forms.New(nil),
+	})
+}
+
+// PostReservation handle the posting the reservation form
+func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
+
 }
 
 // Generals renders the room page
