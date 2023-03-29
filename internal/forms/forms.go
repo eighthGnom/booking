@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/asaskevich/govalidator"
 )
 
 type Form struct {
@@ -48,4 +50,10 @@ func (f *Form) MinLength(field string, length int) bool {
 		return false
 	}
 	return true
+}
+
+func (f *Form) IsEmail(field string) {
+	if !govalidator.IsEmail(f.Get(field)) {
+		f.Errors.Add(field, "Invalid email address")
+	}
 }
