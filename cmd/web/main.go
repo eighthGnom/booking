@@ -20,11 +20,24 @@ var sessionManager *scs.SessionManager
 
 // main is the main application function
 func main() {
+	err := run()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(fmt.Sprintf("Starting app on port %s", port))
+	srv := &http.Server{
+		Addr:    port,
+		Handler: routes(&appConfig),
+	}
+	log.Fatal(srv.ListenAndServe())
+
+}
+
+func run() error {
 	var err error
 
 	// what am I going to put in the session
 	gob.Register(models.Reservation{})
-
 	// change this to true when in production
 	appConfig.InProduction = false
 
@@ -44,11 +57,5 @@ func main() {
 	handlers.SetRepoForHandlers(repo)
 	render.SetTemplatesConfig(&appConfig)
 
-	fmt.Println(fmt.Sprintf("Starting app on port %s", port))
-	srv := &http.Server{
-		Addr:    port,
-		Handler: routs(&appConfig),
-	}
-	log.Fatal(srv.ListenAndServe())
-
+	return nil
 }

@@ -9,8 +9,8 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-// routs ...
-func routs(appConfig *config.AppConfig) http.Handler {
+// routes ...
+func routes(appConfig *config.AppConfig) http.Handler {
 	mux := chi.NewRouter()
 
 	mux.Use(middleware.Recoverer)
