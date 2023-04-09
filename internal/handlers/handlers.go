@@ -3,11 +3,11 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/eighthGnom/booking/internal/config"
 	"github.com/eighthGnom/booking/internal/forms"
+	"github.com/eighthGnom/booking/internal/helpers"
 	"github.com/eighthGnom/booking/internal/models"
 	"github.com/eighthGnom/booking/internal/render"
 )
@@ -42,17 +42,7 @@ func (m *Repository) Home(w http.ResponseWriter, r *http.Request) {
 
 // About is the handler for the about page
 func (m *Repository) About(w http.ResponseWriter, r *http.Request) {
-	// perform some logic
-	stringData := make(map[string]string)
-	stringData["test"] = "Hello, again"
-
-	remoteIP := m.AppConfig.SessionManager.GetString(r.Context(), "remote_ip")
-	stringData["remote_ip"] = remoteIP
-
-	// send data to the template
-	render.RenderTemplate(w, r, "about.page.tmpl", &models.TemplateData{
-		StringData: stringData,
-	})
+	render.RenderTemplate(w, r, "about.page.tmpl", &models.TemplateData{})
 }
 
 // Reservation renders the make a reservation page and displays form
@@ -70,7 +60,7 @@ func (m *Repository) Reservation(w http.ResponseWriter, r *http.Request) {
 func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
-		log.Println(err)
+		helpers.ServerError(w, err)
 		return
 	}
 	reservation := models.Reservation{
@@ -130,7 +120,11 @@ func (m *Repository) AvailabilityJSON(w http.ResponseWriter, r *http.Request) {
 		Ok:      true,
 		Message: "Available",
 	}
-	json.NewEncoder(w).Encode(message)
+	err := json.NewEncoder(w).Encode(message)
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 
 }
@@ -143,7 +137,7 @@ func (m *Repository) Contact(w http.ResponseWriter, r *http.Request) {
 func (m *Repository) ReservationSummary(w http.ResponseWriter, r *http.Request) {
 	reservation, ok := m.AppConfig.SessionManager.Get(r.Context(), "reservation").(models.Reservation)
 	if !ok {
-		log.Println("Cannot get item from session")
+		m.AppConfig.ErrorLog.Println("Can't get value form session")
 		m.AppConfig.SessionManager.Put(r.Context(), "error", "Cannot get item from session")
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
