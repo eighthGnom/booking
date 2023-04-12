@@ -70,7 +70,7 @@ func run() (*driver.DB, error) {
 		log.Fatal(err)
 	}
 	appConfig.UseCache = false
-	repo := handlers.NewRepo(&appConfig)
+	repo := handlers.NewRepo(&appConfig, db)
 	handlers.SetRepoForHandlers(repo)
 	render.SetTemplatesConfig(&appConfig)
 	helpers.SetHelpersConfig(&appConfig)
