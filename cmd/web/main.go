@@ -42,13 +42,21 @@ func main() {
 func run() (*driver.DB, error) {
 	var err error
 
-	db, err := driver.ConnectSQL("host=localhost port=5432 dbname=bookings user=postgres password=postgres")
+	// connect to database
+	log.Println("Connecting to database...")
+	db, err := driver.ConnectSQL("host=localhost port=5432 dbname=bookings user=tcs password=")
 	if err != nil {
-		return nil, err
+		log.Fatal("Cannot connect to database! Dying...")
 	}
+
+	log.Println("Connected to database!")
 
 	// what am I going to put in the session
 	gob.Register(models.Reservation{})
+	gob.Register(models.User{})
+	gob.Register(models.Room{})
+	gob.Register(models.Restriction{})
+
 	// change this to true when in production
 	appConfig.InProduction = false
 
@@ -70,9 +78,10 @@ func run() (*driver.DB, error) {
 		log.Fatal(err)
 	}
 	appConfig.UseCache = false
+
 	repo := handlers.NewRepo(&appConfig, db)
 	handlers.SetRepoForHandlers(repo)
-	render.SetTemplatesConfig(&appConfig)
+	render.SetRenderConfig(&appConfig)
 	helpers.SetHelpersConfig(&appConfig)
 
 	return db, nil
