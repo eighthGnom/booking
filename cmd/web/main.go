@@ -10,6 +10,7 @@ import (
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/eighthGnom/booking/internal/config"
+	"github.com/eighthGnom/booking/internal/driver"
 	"github.com/eighthGnom/booking/internal/handlers"
 	"github.com/eighthGnom/booking/internal/helpers"
 	"github.com/eighthGnom/booking/internal/models"
@@ -24,10 +25,11 @@ var errorLog *log.Logger
 
 // main is the main application function
 func main() {
-	err := run()
+	db, err := run()
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer db.SQL.Close()
 	fmt.Println(fmt.Sprintf("Starting app on port %s", port))
 	srv := &http.Server{
 		Addr:    port,
@@ -37,8 +39,13 @@ func main() {
 
 }
 
-func run() error {
+func run() (*driver.DB, error) {
 	var err error
+
+	db, err := driver.ConnectSQL("host=localhost port=5432 dbname=bookings user=postgres password=postgres")
+	if err != nil {
+		return nil, err
+	}
 
 	// what am I going to put in the session
 	gob.Register(models.Reservation{})
@@ -68,5 +75,5 @@ func run() error {
 	render.SetTemplatesConfig(&appConfig)
 	helpers.SetHelpersConfig(&appConfig)
 
-	return nil
+	return db, nil
 }

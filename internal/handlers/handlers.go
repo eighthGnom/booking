@@ -6,10 +6,13 @@ import (
 	"net/http"
 
 	"github.com/eighthGnom/booking/internal/config"
+	"github.com/eighthGnom/booking/internal/driver"
 	"github.com/eighthGnom/booking/internal/forms"
 	"github.com/eighthGnom/booking/internal/helpers"
 	"github.com/eighthGnom/booking/internal/models"
 	"github.com/eighthGnom/booking/internal/render"
+	"github.com/eighthGnom/booking/internal/repository"
+	"github.com/eighthGnom/booking/internal/repository/dbrepo"
 )
 
 // Repo the repository used by the handlers
@@ -18,12 +21,14 @@ var Repo *Repository
 // Repository is the repository type
 type Repository struct {
 	AppConfig *config.AppConfig
+	DB        repository.DatabaseRepo
 }
 
 // NewRepo creates a new repository
-func NewRepo(appConfig *config.AppConfig) *Repository {
+func NewRepo(appConfig *config.AppConfig, db *driver.DB) *Repository {
 	return &Repository{
 		AppConfig: appConfig,
+		DB:        dbrepo.NewPostgresRepo(db.SQL, appConfig),
 	}
 }
 
