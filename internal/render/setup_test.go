@@ -3,15 +3,14 @@ package render
 import (
 	"encoding/gob"
 	"log"
-
-	"github.com/alexedwards/scs/v2"
-	"github.com/eighthGnom/booking/internal/config"
-	"github.com/eighthGnom/booking/internal/models"
-
 	"net/http"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/alexedwards/scs/v2"
+	"github.com/eighthGnom/booking/internal/config"
+	"github.com/eighthGnom/booking/internal/models"
 )
 
 var session *scs.SessionManager
@@ -19,6 +18,7 @@ var testApp config.AppConfig
 
 func TestMain(m *testing.M) {
 
+	// what am I going to put in the session
 	gob.Register(models.Reservation{})
 
 	// change this to true when in production
@@ -30,16 +30,15 @@ func TestMain(m *testing.M) {
 	errorLog := log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 	testApp.ErrorLog = errorLog
 
-	// set up the session
 	session = scs.New()
 	session.Lifetime = 24 * time.Hour
 	session.Cookie.Persist = true
 	session.Cookie.SameSite = http.SameSiteLaxMode
 	session.Cookie.Secure = false
 
-	testApp.SessionManager = session
+	testApp.Session = session
 
-	appConfig = &testApp
+	app = &testApp
 
 	os.Exit(m.Run())
 }
@@ -51,7 +50,9 @@ func (tw *myWriter) Header() http.Header {
 	return h
 }
 
-func (tw *myWriter) WriteHeader(i int) {}
+func (tw *myWriter) WriteHeader(i int) {
+
+}
 
 func (tw *myWriter) Write(b []byte) (int, error) {
 	length := len(b)

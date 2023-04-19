@@ -12,16 +12,16 @@ func TestAddDefaultData(t *testing.T) {
 
 	r, err := getSession()
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
 
 	session.Put(r.Context(), "flash", "123")
 
 	result := AddDefaultData(&td, r)
+
 	if result.Flash != "123" {
 		t.Error("flash value of 123 not found in session")
 	}
-
 }
 
 func TestRenderTemplate(t *testing.T) {
@@ -31,7 +31,7 @@ func TestRenderTemplate(t *testing.T) {
 		t.Error(err)
 	}
 
-	appConfig.TemplateCache = tc
+	app.TemplateCache = tc
 
 	r, err := getSession()
 	if err != nil {
@@ -42,14 +42,13 @@ func TestRenderTemplate(t *testing.T) {
 
 	err = Template(&ww, r, "home.page.tmpl", &models.TemplateData{})
 	if err != nil {
-		t.Error("error writing template to browser", err)
+		t.Error("error writing template to browser")
 	}
 
 	err = Template(&ww, r, "non-existent.page.tmpl", &models.TemplateData{})
 	if err == nil {
 		t.Error("rendered template that does not exist")
 	}
-
 }
 
 func getSession() (*http.Request, error) {
@@ -61,16 +60,16 @@ func getSession() (*http.Request, error) {
 	ctx := r.Context()
 	ctx, _ = session.Load(ctx, r.Header.Get("X-Session"))
 	r = r.WithContext(ctx)
+
 	return r, nil
 }
 
 func TestNewTemplates(t *testing.T) {
-	SetRenderConfig(appConfig)
+	NewRenderer(app)
 }
 
 func TestCreateTemplateCache(t *testing.T) {
 	pathToTemplates = "./../../templates"
-
 	_, err := CreateTemplateCache()
 	if err != nil {
 		t.Error(err)

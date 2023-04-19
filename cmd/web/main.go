@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/gob"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -17,9 +18,10 @@ import (
 	"github.com/eighthGnom/booking/internal/render"
 )
 
-var port = ":8080"
-var appConfig config.AppConfig
-var sessionManager *scs.SessionManager
+const portNumber = ":8080"
+
+var app config.AppConfig
+var session *scs.SessionManager
 var infoLog *log.Logger
 var errorLog *log.Logger
 
@@ -30,59 +32,90 @@ func main() {
 		log.Fatal(err)
 	}
 	defer db.SQL.Close()
-	fmt.Println(fmt.Sprintf("Starting app on port %s", port))
-	srv := &http.Server{
-		Addr:    port,
-		Handler: routes(&appConfig),
-	}
-	log.Fatal(srv.ListenAndServe())
 
+	defer close(app.MailChan)
+
+	fmt.Println("Staring mail listener...")
+	listenForMail()
+
+	fmt.Println(fmt.Sprintf("Starting application on port %s", portNumber))
+
+	srv := &http.Server{
+		Addr:    portNumber,
+		Handler: routes(&app),
+	}
+
+	err = srv.ListenAndServe()
+	log.Fatal(err)
 }
 
 func run() (*driver.DB, error) {
-	var err error
-
-	// connect to database
-	log.Println("Connecting to database...")
-	db, err := driver.ConnectSQL("host=localhost port=5432 dbname=bookings user=tcs password=")
-	if err != nil {
-		log.Fatal("Cannot connect to database! Dying...")
-	}
-
-	log.Println("Connected to database!")
-
 	// what am I going to put in the session
 	gob.Register(models.Reservation{})
 	gob.Register(models.User{})
 	gob.Register(models.Room{})
 	gob.Register(models.Restriction{})
+	gob.Register(map[string]int{})
+
+	// read flags
+	inProduction := flag.Bool("production", true, "Application is in production")
+	useCache := flag.Bool("cache", true, "Use template cache")
+	dbHost := flag.String("dbhost", "localhost", "Database host")
+	dbName := flag.String("dbname", "bookings", "Database name")
+	dbUser := flag.String("dbuser", "postgres", "Database user")
+	dbPass := flag.String("dbpass", "postgres", "Database password")
+	dbPort := flag.String("dbport", "5432", "Database port")
+	dbSSL := flag.String("dbssl", "disable", "Database ssl settings (disable, prefer, require)")
+
+	flag.Parse()
+
+	if *dbName == "" || *dbUser == "" {
+		fmt.Println("Missing required flags")
+		os.Exit(1)
+	}
+
+	mailChan := make(chan models.MailData)
+	app.MailChan = mailChan
 
 	// change this to true when in production
-	appConfig.InProduction = false
+	app.InProduction = *inProduction
+	app.UseCache = *useCache
 
 	infoLog = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
-	appConfig.InfoLog = infoLog
+	app.InfoLog = infoLog
 
 	errorLog = log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
-	appConfig.ErrorLog = errorLog
+	app.ErrorLog = errorLog
 
-	sessionManager = scs.New()
-	sessionManager.Lifetime = 24 * time.Hour
-	sessionManager.Cookie.Persist = true
-	sessionManager.Cookie.SameSite = http.SameSiteLaxMode
-	sessionManager.Cookie.Secure = appConfig.InProduction
+	session = scs.New()
+	session.Lifetime = 24 * time.Hour
+	session.Cookie.Persist = true
+	session.Cookie.SameSite = http.SameSiteLaxMode
+	session.Cookie.Secure = app.InProduction
 
-	appConfig.SessionManager = sessionManager
-	appConfig.TemplateCache, err = render.CreateTemplateCache()
+	app.Session = session
+
+	// connect to database
+	log.Println("Connecting to database...")
+	connectionString := fmt.Sprintf("host=%s port=%s dbname=%s user=%s password=%s sslmode=%s", *dbHost, *dbPort, *dbName, *dbUser, *dbPass, *dbSSL)
+	db, err := driver.ConnectSQL(connectionString)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Cannot connect to database! Dying...")
 	}
-	appConfig.UseCache = false
+	log.Println("Connected to database!")
 
-	repo := handlers.NewRepo(&appConfig, db)
-	handlers.SetRepoForHandlers(repo)
-	render.SetRenderConfig(&appConfig)
-	helpers.SetHelpersConfig(&appConfig)
+	tc, err := render.CreateTemplateCache()
+	if err != nil {
+		log.Fatal("cannot create template cache")
+		return nil, err
+	}
+
+	app.TemplateCache = tc
+
+	repo := handlers.NewRepo(&app, db)
+	handlers.NewHandlers(repo)
+	render.NewRenderer(&app)
+	helpers.NewHelpers(&app)
 
 	return db, nil
 }

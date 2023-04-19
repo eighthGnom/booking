@@ -3,23 +3,35 @@ package main
 import (
 	"net/http"
 
+	"github.com/eighthGnom/booking/internal/helpers"
 	"github.com/justinas/nosurf"
 )
 
 // NoSurf adds CSRF protection to all POST requests
 func NoSurf(next http.Handler) http.Handler {
-	newHandler := nosurf.New(next)
+	csrfHandler := nosurf.New(next)
 
-	newHandler.SetBaseCookie(http.Cookie{
+	csrfHandler.SetBaseCookie(http.Cookie{
 		HttpOnly: true,
 		Path:     "/",
-		Secure:   appConfig.InProduction,
+		Secure:   app.InProduction,
 		SameSite: http.SameSiteLaxMode,
 	})
-	return newHandler
+	return csrfHandler
 }
 
 // SessionLoad loads and saves the session on every request
 func SessionLoad(next http.Handler) http.Handler {
-	return sessionManager.LoadAndSave(next)
+	return session.LoadAndSave(next)
+}
+
+func Auth(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !helpers.IsAuthenticated(r) {
+			session.Put(r.Context(), "error", "Log in first!")
+			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/eighthGnom/booking/internal/config"
-	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi"
 )
 
 func TestRoutes(t *testing.T) {
@@ -15,8 +15,8 @@ func TestRoutes(t *testing.T) {
 
 	switch v := mux.(type) {
 	case *chi.Mux:
-		// do nothing
+		// do nothing; test passed
 	default:
-		t.Error(fmt.Sprintf("type is not *chi.Mux, but is %T", v))
+		t.Error(fmt.Sprintf("type is not *chi.Mux, type is %T", v))
 	}
 }
